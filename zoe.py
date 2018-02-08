@@ -11,7 +11,7 @@ from nltk.corpus import stopwords
 path = 'data/History.rpt'
 
 with open(path, 'r') as csvfile:
-  reader = csv.DictReader(csvfile, delimiter=',', quotechar='|')
+  reader = csv.DictReader(csvfile, delimiter=',') # todo: use another delimiter
 
   uniqueRows = []
   stop_words = stopwords.words('english')
@@ -19,6 +19,13 @@ with open(path, 'r') as csvfile:
   row_len = 0
   for row in reader:
     row_len += 1
+    accuracy = row['Accuracy']
+    if accuracy is None or not accuracy.isdigit():
+      continue
+
+    if float(accuracy) == 1:
+      continue
+
     token = row['Message'].strip().lower() if row['Message'] is not None else ''
 
     # replaces not  word characters or spaces with the empty string
@@ -55,5 +62,5 @@ uniqueRows = sorted(uniqueRows)
 print(*uniqueRows, sep="\n")
 print('{} of {} lines filtered'.format(len(uniqueRows), row_len))
 
-with open("data/cleaned_history.txt", "w") as clean_history_output:
-  clean_history_output.write('\n'.join(uniqueRows))
+# with open("data/cleaned_history.txt", "w") as clean_history_output:
+#  clean_history_output.write('\n'.join(uniqueRows))
