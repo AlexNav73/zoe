@@ -4,7 +4,7 @@ from scipy import spatial
 from gensim.scripts.glove2word2vec import glove2word2vec
 
 class Word2VecModel:
-  '''Calculates cosine similarity between vectors of sentences
+  """Calculates cosine similarity between vectors of sentences
     see
     https://stackoverflow.com/questions/22129943/how-to-calculate-the-sentence-similarity-using-word2vec-model-of-gensim-with-pyt
 
@@ -20,7 +20,7 @@ class Word2VecModel:
 
       s, dist = model.most_similar('how are you', queries)
       > how are you, 1
-  '''
+  """
 
   num_features = 50
   glove_input_file = 'data/glove/glove.6B.50d.txt'
@@ -43,19 +43,24 @@ class Word2VecModel:
     self.sentence_vectors = {}
 
   def most_similar(self, sentence, sentences):
-    sentence_vector = self.avg_vector(sentence)
+    if sentence not in self.sentence_vectors:
+      self.sentence_vectors[sentence] = self.avg_vector(sentence)
+    sentence_vector = self.sentence_vectors[sentence]
+
     max_cosine = 0
     most_similar_sentence = ''
 
     for s in sentences:
       if s not in self.sentence_vectors:
         self.sentence_vectors[s] = self.avg_vector(s)
-
       v = self.sentence_vectors[s]
+
       cosine = 1 - spatial.distance.cosine(sentence_vector, v)
+
       if max_cosine < cosine:
         max_cosine = cosine
         most_similar_sentence = s
+
     return most_similar_sentence, max_cosine
 
   def similarity(self, sentence1, sentence2):
