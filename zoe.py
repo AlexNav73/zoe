@@ -1,5 +1,6 @@
 import csv
 import logging
+import time
 
 from word2vec_model import ChatModel
 from nl_processor import NLProcessor
@@ -55,10 +56,15 @@ class ModelStub:
     return next(iter(sentences)), 1
 
 
-  def fit(self, data, similarity_thresholds=[0.5]):
+  def fit(self, data, similarity_thresholds=[0.9]):
     logging.info(
         'accuracy: %0.4f, similarity: %0.4f', 1, similarity_thresholds[0])
     return 1, similarity_thresholds[0]
+
+
+  def predict_questions(self, questions_data):
+    # do nothing
+    pass
 
 
   def predict(self, sentence):
@@ -66,10 +72,24 @@ class ModelStub:
 
 
 def main():
+  start = time.clock()
+
   # Load data to train model
   cleaned_data_file = 'data/cleaned_history.csv'
+  logging.debug("Loading cleaned data from %s", cleaned_data_file)
   #history_to_file(history_rows, output_file)
   cleaned_data = load_cleaned_data(cleaned_data_file)
+
+  nl_processor = NLProcessor(logger)
+  # nl_processor.corrected_spelling = 0
+  # for row in cleaned_data:
+  #   parsed_query = row['parsed_query']
+  #   corrected_spelling = \
+  #     nl_processor.correct_spelling(parsed_query, nl_processor.acronyms)
+  #   if parsed_query != corrected_spelling:
+  #     row['parsed_query'] = corrected_spelling
+
+  logging.debug(">> time spent: %ds\n", time.clock() - start)
 
   # Build model
   logging.info("Creating model")
@@ -78,39 +98,18 @@ def main():
   logging.debug("Training model")
   accuracy, similarity = model.fit(cleaned_data, [.96, .97, .98])
 
+  logging.debug(">> time spent: %ds\n", time.clock() - start)
+
   # Load raw data
-  nl_processor = NLProcessor(logger)
   history_file = 'data/history.csv'
-  raw_data = nl_processor.parse(history_file)
+  logging.debug("Cleaning data from %s", history_file)
+  questions_data = nl_processor.parse(history_file)
+
+  logging.debug(">> time spent: %ds\n", time.clock() - start)
 
   # Predict
   logging.info("Predicting questions")
-  predicted_questions = []
-  #rows_to_process = math.inf
-  current_row = 0
-  for k, v in raw_data.items():
-    current_row += 1
-    #if current_row > rows_to_process:
-    #  break
-
-    parsed_query = v['parsed_query']
-    predicted_question, similarity = model.predict(parsed_query)
-    predicted_questions.append({
-      'similarity': similarity,
-      'query': v['query'],
-      'parsed_query': parsed_query,
-      'predicted_question': predicted_question,
-      'question': v['question'],
-      #'answer': v['answer']
-    })
-
-    if current_row % 50 == 0:
-      logging.debug(
-        'predicted: %5d of %d',
-        current_row,
-        len(raw_data))
-
-
+  predicted_questions = model.predict_questions(questions_data)
   print("{:<8}; {:<40}; {:<40}; {:<40}; {:<40}".format(
       'SIMILARITY',
       'QUERY',
@@ -119,15 +118,16 @@ def main():
       'QUESTION'
   ))
   for row in predicted_questions:
-    #self.logging.debug(
+    #logging.debug(
     #"%d;\t%s;\t\t\t%s", row['accuracy'], row['query'], row['similar_question'])
     print("{:.8f}; {:<40}; {:<40}; {:<40}; {:<40}".format(
-      float(row['similarity']),
-      row['query'],
-      row['parsed_query'],
-      row['predicted_question'],
-      row['question']))
+        float(row['similarity']),
+        row['query'],
+        row['parsed_query'],
+        row['predicted_question'],
+        row['question']))
 
+  logging.debug(">> time spent: %ds\n", time.clock() - start)
   logging.info('done')
 
 

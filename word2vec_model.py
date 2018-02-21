@@ -111,7 +111,7 @@ class ChatModel(Word2VecModel):
     self.questions = {}
 
 
-  def fit(self, data, similarity_thresholds=[0.7]):
+  def fit(self, data, similarity_thresholds=[0.9]):
     """Trains using the given data trying to choose best similarity threshold.
     :param data: list of dictionaries in the form:
     {query:<>, parsed_query:<>, question:<>, correct:<1|0>}
@@ -138,6 +138,7 @@ class ChatModel(Word2VecModel):
 
 
     # Cache query similarities in map.
+    self.logging.debug("Calculate similarities")
     parsed_query_to_similarity_map = {}
     processed_rows_number = 0
     # Be careful: this metric shows better results without removing stop words
@@ -157,7 +158,7 @@ class ChatModel(Word2VecModel):
 
       avg_similarity += similarity
 
-      if processed_rows_number % 50 == 0:
+      if processed_rows_number % 100 == 0:
         self.logging.debug(
             'processed: %5d of %d, avg similarity: %0.8f',
             processed_rows_number,
@@ -170,12 +171,12 @@ class ChatModel(Word2VecModel):
         rows_number,
         avg_similarity / processed_rows_number)
 
-
+    # Find similarity level which gives best results
+    self.logging.debug("Calculate accuracy")
     max_accuracy = 0
     max_precision = 0
     max_recall = 0
     best_similarity = 0
-    # Find similarity level which gives best results
     for similarity_threshold in similarity_thresholds:
       tp = 0
       tn = 0
@@ -228,6 +229,34 @@ class ChatModel(Word2VecModel):
     self.similarity = best_similarity
     return accuracy, best_similarity
 
+
+  def predict_questions(self, questions_data):
+    predicted_questions = []
+    #rows_to_process = math.inf
+    current_row = 0
+    for k, v in questions_data.items():
+      current_row += 1
+      #if current_row > rows_to_process:
+      #  break
+
+      parsed_query = v['parsed_query']
+      predicted_question, similarity = self.predict(parsed_query)
+      predicted_questions.append({
+        'similarity': similarity,
+        'query': v['query'],
+        'parsed_query': parsed_query,
+        'predicted_question': predicted_question,
+        'question': v['question'],
+        #'answer': v['answer']
+      })
+
+      if current_row % 100 == 0:
+        self.logging.debug(
+            'Predicted: %5d of %d',
+            current_row,
+            len(questions_data))
+
+    return predicted_questions
 
   def predict(self, sentence):
     similar_question, similarity = self.most_similar(sentence, self.questions)
