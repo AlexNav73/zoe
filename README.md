@@ -1,7 +1,7 @@
 # zoe
 Chatbot experiments
 
-Here is a retrieval-based model of a chatbot. 
+Here is a [retrieval-based model](http://www.wildml.com/2016/04/deep-learning-for-chatbots-part-1-introduction/) of a chatbot. 
 The model is based on embedding vectors (word2vec) and some kind of heuristic. 
 The model predicts a question from a predefined list by a user query. 
 The idea is that this task is similar to search using similarity between a user query and a set of documents.
