@@ -28,6 +28,7 @@ Main steps:
 - call model.predict() to get the predicted question (if any) by the given query
 
 Pros:
+- recognises semantically close words/sentences
 - fast and simple
 - interpretable
 
