@@ -118,6 +118,7 @@ class ChatModel(Word2VecModel):
     :param similarity_thresholds:
     :return:
     """
+
     rows_number = len(data)
     self.questions = {v['question'] for v in data}
 

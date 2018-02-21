@@ -75,6 +75,7 @@ def main():
   logging.info("Creating model")
   model = ChatModel(logger)
   #model = ModelStub(logger)
+  logging.debug("Training model")
   accuracy, similarity = model.fit(cleaned_data, [.96, .97, .98])
 
   # Load raw data
