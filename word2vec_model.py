@@ -1,7 +1,8 @@
 from gensim.models import KeyedVectors
+from gensim.scripts.glove2word2vec import glove2word2vec
+import os.path
 import numpy as np
 from scipy import spatial
-from gensim.scripts.glove2word2vec import glove2word2vec
 
 class Word2VecModel:
   """Calculates cosine similarity between vectors of sentences
@@ -20,21 +21,27 @@ class Word2VecModel:
       > how are you, 1
   """
 
-  num_features = 50
   glove_input_file = 'data/glove/glove.6B.50d.txt'
   word2vec_output_file = 'data/glove/glove.6B.50d.txt.word2vec'
 
+  def __init__(self,
+      logging,
+      num_features = 50,
+      word2vec_file = glove_input_file):
 
-  def __init__(self, logging):
     self.logging = logging
+    self.num_features = num_features
 
-    # See how to convert from glove to word2vec:
-    # https://radimrehurek.com/gensim/scripts/glove2word2vec.html
-    glove2word2vec(self.glove_input_file, self.word2vec_output_file)
+    if word2vec_file == self.glove_input_file:
+      if not os.path.exists(self.word2vec_output_file):
+        # See how to convert from glove to word2vec:
+        # https://radimrehurek.com/gensim/scripts/glove2word2vec.html
+        glove2word2vec(self.glove_input_file, self.word2vec_output_file)
+      word2vec_file = self.word2vec_output_file
 
     # TODO: too slow; optimize loading e.g. using binary data.
     self.word_vectors = \
-      KeyedVectors.load_word2vec_format(self.word2vec_output_file, binary=False)
+      KeyedVectors.load_word2vec_format(word2vec_file, binary=False)
     self.index2word_set = set(self.word_vectors.index2word)
     # Cashes sentence average vector
     self.sentence_to_vector_map = {}
