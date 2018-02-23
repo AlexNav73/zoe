@@ -11,6 +11,12 @@ class Word2VecModel:
     https://developer.syn.co.in/tutorial/bot/oscova/pretrained-vectors.html)
     and put to data folder.
 
+    Before usage:
+    - Go to
+      https://developer.syn.co.in/tutorial/bot/oscova/pretrained-vectors.html
+    - Download Wikipedia+Gigaword 5
+    - Unpack to data/glove
+
     Usage:
       model = Word2VecModel()
 

@@ -6,11 +6,12 @@ from nltk.corpus import stopwords
 from nltk.tree import Tree
 import re
 
-#nltk.download('punkt')
+# TODO: download only once
 #nltk.download('stopwords')
+#nltk.download('punkt')
+#nltk.download('words')
 #nltk.download('averaged_perceptron_tagger')
 #nltk.download('maxent_ne_chunker')
-#nltk.download('words')
 
 
 class NLProcessor:
@@ -39,14 +40,17 @@ class NLProcessor:
       - removes stop words
       - removes persons' names
       - leaves only unique rows by user message and question
+
       Expected csv format:
-      Id	UserMessage	EtalonQuestion	Accuracy	Etalon	Created	Answer
+        Id	UserMessage	EtalonQuestion	Accuracy	Etalon	Created	Answer
+
     :param path:      path to file
     :param delimiter  delimiter of csv file
     :return: dictionary of dictionaries in the form:
-    {query:<>, parsed_query:<>, question:<>, accuracy:<>, date:<>, answer:<>}
-    where dictionary keys are combinations of parsed_query_question
+      {query:<>, parsed_query:<>, question:<>, accuracy:<>, date:<>, answer:<>}
+      where dictionary keys are combinations of parsed_query_question
     """
+
     with open(path, 'r') as csvfile:
       reader = csv.DictReader(csvfile, delimiter=delimiter)
 
