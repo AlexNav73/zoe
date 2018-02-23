@@ -18,14 +18,14 @@ Requirements:
 - labeled data (pairs "user query - correct question") to train/tune model
 
 Files:
-- zoe.py: entry point
-- word2vec_model.py: model based on gensim vectors
-- nl_processor.py: input data parser/cleaner
+- `zoe.py`: entry point
+- `word2vec_model.py`: model based on gensim vectors
+- `nl_processor.py`: input data parser/cleaner
 
 Main steps:
 - load cleaned/labeled data
-- call model.fit(); the model will store the list of questions and will find the best similarity threshold to detect a correct question by the given query
-- call model.predict() to get the predicted question (if any) by the given query
+- call `model.fit()` the model will store the list of questions and will find the best similarity threshold to detect a correct question by the given query
+- call `model.predict()` to get the predicted question (if any) by the given query
 
 Pros:
 - recognises semantically close words/sentences

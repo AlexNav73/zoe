@@ -30,11 +30,11 @@ def cleaned_data_to_file(rows, filename, delimiter='\t'):
         'answer': answer})
 
 
-def load_cleaned_data(path, delimiter='\t'):
+def load_cleaned_data(path, delimiter=','):
   """Expected csv format:
-    query	parsed_query	question	accuracy	date	answer	correct
-    where correct=1|0 - label that means that parsed_query is a correct question
-    accuracy - oscova chatbot accuracy (from another model)
+    query,parsed_query,question,accuracy,date,answer,correct
+    where `correct`=1|0 - label that means that `parsed_query` is a correct question
+    `accuracy` - oscova chatbot accuracy (from another model)
   :return: list of dictionaries
   """
   with open(path, 'r') as csvfile:
@@ -69,7 +69,6 @@ class ModelStub:
 
   def predict(self, sentence):
     return sentence, 1
-
 
 def main():
   start = time.clock()
