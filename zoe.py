@@ -63,8 +63,16 @@ class ModelStub:
 
 
   def predict_questions(self, questions_data):
-    # do nothing
-    pass
+    predicted_questions = []
+    predicted_questions.append({
+      'similarity': 1,
+      'query': 'query',
+      'parsed_query': 'parsed_query',
+      'predicted_question': 'predicted_question',
+      'question': 'question',
+      #'answer': v['answer']
+    })
+    return predicted_questions
 
 
   def predict(self, sentence):
