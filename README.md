@@ -37,7 +37,7 @@ Cons:
   - can be fixed by adding dictionaries and hooks (easy but not the best solution)
   - or by pretraining based on a domain-specific wiki data (requires lots of data and efforts)
 - works bad with long sentences
-- hard to improve the model results; would be easier to rewrite from scratch
+- can’t recognize negation, sarcasm
 
 TODOs:
 - support other languages except English
