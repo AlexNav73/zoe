@@ -2,7 +2,10 @@ import csv
 import logging
 import time
 
+from word2vec_model import AbstractMetric
+from word2vec_model import AbstractModel
 from word2vec_model import ChatModel
+from word2vec_model import Word2VecSimilarityMetric
 from nl_processor import NLProcessor
 
 
@@ -45,15 +48,23 @@ def load_cleaned_data(path, delimiter='\t'):
   return cleaned_data
 
 
-class ModelStub:
+
+class MetricStub(AbstractMetric):
+
+  def reset(self):
+    pass
+
+
+  def most_similar(self, sentence, sentences):
+    return '', 0
+
+
+
+class ModelStub(AbstractModel):
   """Used for testing only"""
 
   def __init__(self, logging):
     self.logging = logging
-
-
-  def most_similar(self, sentence, sentences):
-    return next(iter(sentences)), 1
 
 
   def fit(self, data, similarity_thresholds=[0.9]):
@@ -69,6 +80,7 @@ class ModelStub:
 
   def predict(self, sentence):
     return sentence, 1
+
 
 
 def main():
@@ -93,9 +105,12 @@ def main():
 
   # Build model
   logging.info("Creating model")
-  model = ChatModel(logger)
+  metric = Word2VecSimilarityMetric(logger)
+  #metric = MetricStub()
+  model = ChatModel(metric,logger)
   #model = ModelStub(logger)
   logging.debug("Training model")
+  #accuracy, similarity = model.fit(cleaned_data, [2])
   accuracy, similarity = model.fit(cleaned_data, [.96, .97, .98])
 
   logging.debug(">> time spent: %ds\n", time.clock() - start)

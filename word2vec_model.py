@@ -4,7 +4,16 @@ import os.path
 import numpy as np
 from scipy import spatial
 
-class Word2VecModel:
+class AbstractMetric:
+
+  def reset(self):
+    raise NotImplementedError('subclasses must override it')
+
+  def most_similar(self, sentence, sentences):
+    raise NotImplementedError('subclasses must override it')
+
+
+class Word2VecSimilarityMetric(AbstractMetric):
   """Calculates cosine similarity between vectors of sentences
     See https://goo.gl/2r1mTF
     To use the model, download word embedding corpus first (e.g. glove from
@@ -105,13 +114,30 @@ class Word2VecModel:
     return feature_vec
 
 
-class ChatModel(Word2VecModel):
+
+class AbstractModel:
+
+  def reset(self):
+    raise NotImplementedError('subclasses must override it')
+
+
+  def fit(self, data, similarity_thresholds):
+    raise NotImplementedError('subclasses must override it')
+
+
+  def predict_questions(self, questions_data):
+    raise NotImplementedError('subclasses must override it')
+
+
+
+class ChatModel(AbstractModel):
   """Predicts user question by user input.
     Stores predefined list of questions during calling fit().
   """
 
-  def __init__(self, logging):
-    Word2VecModel.__init__(self, logging)
+  def __init__(self, metric, logging):
+    self.logging = logging
+    self.metric = metric
     # Similarity threshold used to detect if similar sentence found
     self.similarity = 0
     # Set of questions.
@@ -119,7 +145,7 @@ class ChatModel(Word2VecModel):
 
 
   def reset(self):
-    Word2VecModel.reset(self)
+    self.metric.reset(self)
     self.similarity = 0
     self.questions = {}
 
@@ -163,7 +189,7 @@ class ChatModel(Word2VecModel):
       parsed_query = row['parsed_query']
       if parsed_query not in parsed_query_to_similarity_map:
         similar_question, similarity = \
-          self.most_similar(parsed_query, self.questions)
+          self.metric.most_similar(parsed_query, self.questions)
         parsed_query_to_similarity_map[parsed_query] = \
           (similar_question, similarity)
       else:
@@ -217,7 +243,7 @@ class ChatModel(Word2VecModel):
         elif similarity < similarity_threshold and correct_question_found:
           fn += 1
         else:
-          #if similarity > similarity_threshold and not correct_question_found:
+          #if similarity > similarity_threshold and no correct_question_found:
           fp += 1
 
       accuracy = (tp + tn) / rows_number
@@ -272,7 +298,8 @@ class ChatModel(Word2VecModel):
     return predicted_questions
 
   def predict(self, sentence):
-    similar_question, similarity = self.most_similar(sentence, self.questions)
+    similar_question, similarity = \
+      self.metric.most_similar(sentence, self.questions)
     if similarity < self.similarity:
       return '', similarity # Not found.
     return similar_question, similarity
