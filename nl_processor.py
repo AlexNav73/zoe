@@ -51,7 +51,7 @@ class NLProcessor:
       where dictionary keys are combinations of parsed_query_question
     """
 
-    with open(path, 'r') as csvfile:
+    with open(path, 'r', encoding="utf8") as csvfile:
       reader = csv.DictReader(csvfile, delimiter=delimiter)
 
       query_question_to_row_map = {}

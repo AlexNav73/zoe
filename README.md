@@ -12,10 +12,10 @@ Assumptions:
 - work with short sentences only
 - user query can contain any (invalid) text data
 
-Requirements:
-- set of questions to map user queries on
+Input data:
 - chat history to train/tune the model
 - labeled data (pairs "user query - correct question") to train/tune model
+- domain-specific dictionaries - acronyms, terms etc. (optional)
 
 Files:
 - zoe.py: entry point
@@ -37,7 +37,7 @@ Cons:
   - can be fixed by adding dictionaries and hooks (easy but not the best solution)
   - or by pretraining based on a domain-specific wiki data (requires lots of data and efforts)
 - works bad with long sentences
-- hard to improve the model results; would be easier to rewrite from scratch
+- can’t recognize negation, sarcasm
 
 TODOs:
 - support other languages except English
