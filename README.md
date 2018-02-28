@@ -12,10 +12,10 @@ Assumptions:
 - work with short sentences only
 - user query can contain any (invalid) text data
 
-Requirements:
-- set of questions to map user queries on
+Input data:
 - chat history to train/tune the model
 - labeled data (pairs "user query - correct question") to train/tune model
+- domain-specific dictionaries - acronyms, terms etc. (optional)
 
 Files:
 - zoe.py: entry point
