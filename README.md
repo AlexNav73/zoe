@@ -19,8 +19,9 @@ Input data:
 
 Files:
 - zoe.py: entry point
-- word2vec_model.py: model based on gensim vectors
 - nl_processor.py: input data parser/cleaner
+- predict_question_model.py: model to predict questions using the given sentences similarity metric
+- sentences_similarity_metric.py: calculates sentences similarity metric based on gensim word vectors
 
 Main steps:
 - load cleaned/labeled data
