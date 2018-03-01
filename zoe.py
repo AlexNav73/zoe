@@ -2,11 +2,11 @@ import csv
 import logging
 import time
 
-from word2vec_model import AbstractMetric
-from word2vec_model import AbstractModel
-from word2vec_model import ChatModel
-from word2vec_model import Word2VecSimilarityMetric
 from nl_processor import NLProcessor
+from predict_question_model import AbstractModel
+from predict_question_model import PredictQuestionModel
+from sentences_similarity_metric import AbstractMetric
+from sentences_similarity_metric import Word2VecSimilarityMetric
 
 
 def cleaned_data_to_file(rows, filename, delimiter='\t'):
@@ -115,7 +115,7 @@ def main():
   logging.info("Creating model")
   metric = Word2VecSimilarityMetric(logger)
   #metric = MetricStub()
-  model = ChatModel(metric,logger)
+  model = PredictQuestionModel(metric,logger)
   #model = ModelStub(logger)
   logging.debug("Training model")
   #accuracy, similarity = model.fit(cleaned_data, [2])
