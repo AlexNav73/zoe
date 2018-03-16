@@ -1,6 +1,8 @@
+import sys
 import csv
 import logging
 import time
+import argparse
 
 from word2vec_model import ChatModel
 from nl_processor import NLProcessor
@@ -114,7 +116,15 @@ def main():
 
 
 if __name__ == '__main__':
-  logging.basicConfig(
-      format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--embed', action="store_true", help="Use script as embedded process. All logging will be skipped")
+
+  args = parser.parse_args()
+
+  level = logging.DEBUG
+  if args.embed:
+    level = logging.CRITICAL
+
+  logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=level)
   logger = logging.getLogger(__name__)
   main()

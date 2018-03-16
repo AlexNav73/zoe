@@ -135,7 +135,6 @@ class ChatModel(Word2VecModel):
       if not row['correct']:
         continue
 
-      #query = row['query']
       query = row['parsed_query']
       question = row['question']
 
@@ -143,7 +142,6 @@ class ChatModel(Word2VecModel):
         query_to_correct_questions_map[query] = [question]
       else:
         query_to_correct_questions_map[query].append(question)
-
 
     # Cache query similarities in map.
     self.logging.debug("Calculate similarities")
@@ -191,14 +189,10 @@ class ChatModel(Word2VecModel):
       fp = 0
       fn = 0
       for row in data:
-        parsed_query = row['parsed_query']
-        #query = row['query']
-        query = parsed_query
-        #question = v['question']
-        #is_correct = v['correct']
+        query = row['parsed_query']
 
         similar_question, similarity = \
-          parsed_query_to_similarity_map[parsed_query]
+          parsed_query_to_similarity_map[query]
 
         correct_question_found = False
         if query in query_to_correct_questions_map:
@@ -240,12 +234,10 @@ class ChatModel(Word2VecModel):
 
   def predict_questions(self, questions_data):
     predicted_questions = []
-    #rows_to_process = math.inf
     current_row = 0
-    for k, v in questions_data.items():
+
+    for _, v in questions_data.items():
       current_row += 1
-      #if current_row > rows_to_process:
-      #  break
 
       parsed_query = v['parsed_query']
       predicted_question, similarity = self.predict(parsed_query)
@@ -259,10 +251,7 @@ class ChatModel(Word2VecModel):
       })
 
       if current_row % 100 == 0:
-        self.logging.debug(
-            'Predicted: %5d of %d',
-            current_row,
-            len(questions_data))
+        self.logging.debug(f'Predicted: {current_row} of {len(questions_data)}')
 
     return predicted_questions
 
