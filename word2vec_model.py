@@ -1,8 +1,10 @@
+
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
+from scipy import spatial
+
 import os.path
 import numpy as np
-from scipy import spatial
 
 class Word2VecModel:
   """Calculates cosine similarity between vectors of sentences
@@ -21,23 +23,21 @@ class Word2VecModel:
       > how are you, 1
   """
 
-  glove_input_file = 'data/glove/glove.6B.50d.txt'
-  word2vec_output_file = 'data/glove/glove.6B.50d.txt.word2vec'
-
-  def __init__(self,
-      logging,
-      num_features = 50,
-      word2vec_file = glove_input_file):
-
+  def __init__(self, logging, word2vec_file, num_features = 50):
     self.logging = logging
     self.num_features = num_features
 
-    if word2vec_file == self.glove_input_file:
-      if not os.path.exists(self.word2vec_output_file):
+    if os.path.exists(word2vec_file):
+      word2vec_file_dir = os.path.dirname(word2vec_file)
+      word2vec_file_name, ext = os.path.splitext(os.path.basename(word2vec_file))
+      word2vec_output_file = \
+        os.path.join(word2vec_file_dir, word2vec_file_name + "word2vec" + ext)
+
+      if not os.path.exists(word2vec_output_file):
         # See how to convert from glove to word2vec:
         # https://radimrehurek.com/gensim/scripts/glove2word2vec.html
-        glove2word2vec(self.glove_input_file, self.word2vec_output_file)
-      word2vec_file = self.word2vec_output_file
+        glove2word2vec(word2vec_file, word2vec_output_file)
+      word2vec_file = word2vec_output_file
 
     # TODO: too slow; optimize loading e.g. using binary data.
     self.word_vectors = \
@@ -104,8 +104,8 @@ class ChatModel(Word2VecModel):
     Stores predefined list of questions during calling fit().
   """
 
-  def __init__(self, logging):
-    Word2VecModel.__init__(self, logging)
+  def __init__(self, logging, word2vec_file):
+    Word2VecModel.__init__(self, logging, word2vec_file)
     # Similarity threshold used to detect if similar sentence found
     self.similarity = 0
     # Set of questions.
@@ -127,7 +127,7 @@ class ChatModel(Word2VecModel):
     """
 
     rows_number = len(data)
-    self.questions = {v['question'] for v in data}
+    self.questions = { v['question'] for v in data }
 
     # A query can have several correct questions. Cache it in the map.
     query_to_correct_questions_map = {}
@@ -138,6 +138,7 @@ class ChatModel(Word2VecModel):
       #query = row['query']
       query = row['parsed_query']
       question = row['question']
+
       if query not in query_to_correct_questions_map:
         query_to_correct_questions_map[query] = [question]
       else:

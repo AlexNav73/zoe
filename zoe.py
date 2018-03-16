@@ -5,6 +5,10 @@ import time
 from word2vec_model import ChatModel
 from nl_processor import NLProcessor
 
+OUTPUT_FILE = "data/output.txt"
+HISTORY_FILE = 'data/history.csv'
+CLEANED_DATA_FILE = 'data/cleaned_history.csv'
+GLOVE_INPUT_FILE = 'data/glove/glove.6B.50d.txt'
 
 def cleaned_data_to_file(rows, filename, delimiter='\t'):
   logging.info("storing user history to %s", filename)
@@ -14,7 +18,7 @@ def cleaned_data_to_file(rows, filename, delimiter='\t'):
     fieldnames = ['query', 'parsed_query', 'question', 'accuracy', 'date', 'answer']
     writer = csv.DictWriter(history_output, delimiter=delimiter, fieldnames=fieldnames)
     writer.writeheader()
-    for key, value in rows.items():
+    for _, value in rows.items():
       query = value['query']
       parsed_query = value['parsed_query']
       question = value['question']
@@ -30,7 +34,7 @@ def cleaned_data_to_file(rows, filename, delimiter='\t'):
         'answer': answer})
 
 
-def load_cleaned_data(path, delimiter=','):
+def load_cleaned_data(path, delimiter='\t'):
   """Expected csv format:
     query,parsed_query,question,accuracy,date,answer,correct
     where `correct`=1|0 - label that means that `parsed_query` is a correct question
@@ -45,39 +49,29 @@ def load_cleaned_data(path, delimiter=','):
   return cleaned_data
 
 
-class ModelStub:
-  """Used for testing only"""
-
-  def __init__(self, logging):
-    self.logging = logging
-
-
-  def most_similar(self, sentence, sentences):
-    return next(iter(sentences)), 1
-
-
-  def fit(self, data, similarity_thresholds=[0.9]):
-    logging.info(
-        'accuracy: %0.4f, similarity: %0.4f', 1, similarity_thresholds[0])
-    return 1, similarity_thresholds[0]
-
-
-  def predict_questions(self, questions_data):
-    # do nothing
-    pass
-
-
-  def predict(self, sentence):
-    return sentence, 1
+def write_results_to_file(results, path):
+  with open(path, "w", encoding="utf8") as output:
+    output.write("{:<8}; {:<40}; {:<40}; {:<40}; {:<40}\n".format(
+        'SIMILARITY',
+        'QUERY',
+        'PARSED QUERY',
+        'PREDICTED QUESTION',
+        'QUESTION'
+    ))
+    for row in results:
+      output.write("{:.8f}; {:<40}; {:<40}; {:<40}; {:<40}\n".format(
+          float(row['similarity']),
+          row['query'],
+          row['parsed_query'],
+          row['predicted_question'],
+          row['question']))
 
 def main():
   start = time.clock()
 
   # Load data to train model
-  cleaned_data_file = 'data/cleaned_history.csv'
-  logging.debug("Loading cleaned data from %s", cleaned_data_file)
-  #history_to_file(history_rows, output_file)
-  cleaned_data = load_cleaned_data(cleaned_data_file)
+  logging.debug("Loading cleaned data from %s", CLEANED_DATA_FILE)
+  cleaned_data = load_cleaned_data(CLEANED_DATA_FILE)
 
   nl_processor = NLProcessor(logger)
   # nl_processor.corrected_spelling = 0
@@ -92,39 +86,28 @@ def main():
 
   # Build model
   logging.info("Creating model")
-  model = ChatModel(logger)
-  #model = ModelStub(logger)
+  model = ChatModel(logger, GLOVE_INPUT_FILE)
   logging.debug("Training model")
   accuracy, similarity = model.fit(cleaned_data, [.96, .97, .98])
 
+  logging.info(
+    "Model has been trained successfully. Accuracy: %d Similarity: %d",
+    accuracy,
+    similarity)
   logging.debug(">> time spent: %ds\n", time.clock() - start)
 
   # Load raw data
-  history_file = 'data/history.csv'
-  logging.debug("Cleaning data from %s", history_file)
-  questions_data = nl_processor.parse(history_file)
+  logging.debug("Cleaning data from %s", HISTORY_FILE)
+  questions_data = nl_processor.parse(HISTORY_FILE)
 
   logging.debug(">> time spent: %ds\n", time.clock() - start)
 
   # Predict
   logging.info("Predicting questions")
   predicted_questions = model.predict_questions(questions_data)
-  print("{:<8}; {:<40}; {:<40}; {:<40}; {:<40}".format(
-      'SIMILARITY',
-      'QUERY',
-      'PARSED QUERY',
-      'PREDICTED QUESTION',
-      'QUESTION'
-  ))
-  for row in predicted_questions:
-    #logging.debug(
-    #"%d;\t%s;\t\t\t%s", row['accuracy'], row['query'], row['similar_question'])
-    print("{:.8f}; {:<40}; {:<40}; {:<40}; {:<40}".format(
-        float(row['similarity']),
-        row['query'],
-        row['parsed_query'],
-        row['predicted_question'],
-        row['question']))
+
+  logging.info("Dump output to %s file", OUTPUT_FILE)
+  write_results_to_file(predicted_questions, OUTPUT_FILE)
 
   logging.debug(">> time spent: %ds\n", time.clock() - start)
   logging.info('done')

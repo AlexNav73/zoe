@@ -1,29 +1,40 @@
-from autocorrect import spell
+
+import os
 import csv
-from datetime import datetime
 import nltk
-from nltk.corpus import stopwords
-from nltk.tree import Tree
 import re
 
-#nltk.download('punkt')
-#nltk.download('stopwords')
-#nltk.download('averaged_perceptron_tagger')
-#nltk.download('maxent_ne_chunker')
-#nltk.download('words')
+from autocorrect import spell
+from datetime import datetime
+from nltk.corpus import stopwords
+from nltk.tree import Tree
 
+NLTK_DATA_DIR = "data/nltk"
 
 class NLProcessor:
 
   def __init__(self, logging):
     self.logging = logging
     self.stop_words = stopwords.words('english')
-    #print(*sorted(self.stop_words), sep='\n')
     self.stop_words_ru = stopwords.words('russian')
-    #print(*sorted(self.stop_words_ru), sep='\n')
     # TODO: add other languages
     self.persons_names = self.load_persons_names()
     self.acronyms = self.load_acronyms()
+
+    self.ensure_nltk_data_download()
+
+
+  def ensure_nltk_data_download(self):
+    if not os.path.exists(NLTK_DATA_DIR):
+      self.logging.info("nltk data not exists. Start downloading ...")
+
+      nltk.download('punkt', download_dir=NLTK_DATA_DIR)
+      nltk.download('stopwords', download_dir=NLTK_DATA_DIR)
+      nltk.download('averaged_perceptron_tagger', download_dir=NLTK_DATA_DIR)
+      nltk.download('maxent_ne_chunker', download_dir=NLTK_DATA_DIR)
+      nltk.download('words', download_dir=NLTK_DATA_DIR)
+
+      self.logging.info("nltk data has been successfully downloaded")
 
 
   # TODO: parse non-english data (now non-ascii is just ignored).
@@ -47,7 +58,7 @@ class NLProcessor:
     {query:<>, parsed_query:<>, question:<>, accuracy:<>, date:<>, answer:<>}
     where dictionary keys are combinations of parsed_query_question
     """
-    with open(path, 'r') as csvfile:
+    with open(path, 'r', encoding="utf8") as csvfile:
       reader = csv.DictReader(csvfile, delimiter=delimiter)
 
       query_question_to_row_map = {}
@@ -63,6 +74,7 @@ class NLProcessor:
       self.ignored_names = 0
       self.corrected_spelling = 0
       rows_number = 0
+
       for row in reader:
         rows_number += 1
 
@@ -129,24 +141,15 @@ class NLProcessor:
 
       self.logging.debug(
           '%d of %d lines parsed', len(query_question_to_row_map), rows_number)
-      self.logging.debug('\n\
-          ignored_stopwords=%d\n\
-          ignored_len=%d\n\
-          ignored_words_number=%d\n\
-          ignored_digits=%d\n\
-          ignored_non_ascii=%d\n\
-          ignored_accuracy=%d\n\
-          ignored_nonunique=%d\n\
-          corrected_spelling=%d',
-                         self.ignored_stopwords,
-                         self.ignored_len,
-                         self.ignored_words_number,
-                         self.ignored_digits,
-                         self.ignored_non_ascii,
-                         self.ignored_accuracy,
-                         self.ignored_nonunique,
-                         self.corrected_spelling
-                         )
+      self.logging.debug(f'\n\
+          ignored_stopwords={self.ignored_stopwords}\n\
+          ignored_len={self.ignored_len}\n\
+          ignored_words_number={self.ignored_words_number}\n\
+          ignored_digits={self.ignored_digits}\n\
+          ignored_non_ascii={self.ignored_non_ascii}\n\
+          ignored_accuracy={self.ignored_accuracy}\n\
+          ignored_nonunique={self.ignored_nonunique}\n\
+          corrected_spelling={self.corrected_spelling}')
 
       return query_question_to_row_map
 
@@ -176,7 +179,7 @@ class NLProcessor:
 
   def detect_names_using_chunking(self, phrase):
     """See http://www.nltk.org/book/ch07.html
-      Does not recognise lowercase.
+      Does not recognize lowercase.
       Usage:
       detect_names_using_chunking('Summer School Coordinator Katrina Langdon')
     """
