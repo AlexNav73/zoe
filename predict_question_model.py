@@ -3,109 +3,28 @@ from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
 from scipy import spatial
 
-import os.path
-import numpy as np
-
-class Word2VecModel:
-  """Calculates cosine similarity between vectors of sentences
-    See https://goo.gl/2r1mTF
-    To use the model, download word embedding corpus first (e.g. glove from
-    https://developer.syn.co.in/tutorial/bot/oscova/pretrained-vectors.html)
-    and put to data folder.
-
-    Usage:
-      model = Word2VecModel()
-
-      model.similarity('this is a sentence', 'this is also sentence')
-      > 0.915479828613
-
-      s, dist = model.most_similar('how are you', queries)
-      > how are you, 1
-  """
-
-  def __init__(self, logging, word2vec_file, num_features = 50):
-    self.logging = logging
-    self.num_features = num_features
-
-    if os.path.exists(word2vec_file):
-      word2vec_file_dir = os.path.dirname(word2vec_file)
-      word2vec_file_name, ext = os.path.splitext(os.path.basename(word2vec_file))
-      word2vec_output_file = \
-        os.path.join(word2vec_file_dir, word2vec_file_name + "word2vec" + ext)
-
-      if not os.path.exists(word2vec_output_file):
-        # See how to convert from glove to word2vec:
-        # https://radimrehurek.com/gensim/scripts/glove2word2vec.html
-        glove2word2vec(word2vec_file, word2vec_output_file)
-      word2vec_file = word2vec_output_file
-
-    # TODO: too slow; optimize loading e.g. using binary data.
-    self.word_vectors = \
-      KeyedVectors.load_word2vec_format(word2vec_file, binary=False)
-    self.index2word_set = set(self.word_vectors.index2word)
-    # Cashes sentence average vector
-    self.sentence_to_vector_map = {}
-
+class AbstractModel:
 
   def reset(self):
-    self.sentence_to_vector_map = {}
+    raise NotImplementedError('subclasses must override it')
 
 
-  def most_similar(self, sentence, sentences):
-    if sentence not in self.sentence_to_vector_map:
-      self.sentence_to_vector_map[sentence] = self.avg_vector(sentence)
-    sentence_vector = self.sentence_to_vector_map[sentence]
-
-    max_cosine = 0
-    most_similar_sentence = ''
-
-    for s in sentences:
-      if s not in self.sentence_to_vector_map:
-        self.sentence_to_vector_map[s] = self.avg_vector(s)
-      v = self.sentence_to_vector_map[s]
-
-      cosine = 1 - spatial.distance.cosine(sentence_vector, v)
-
-      if max_cosine < cosine:
-        max_cosine = cosine
-        most_similar_sentence = s
-
-    return most_similar_sentence, max_cosine
+  def fit(self, data, similarity_thresholds):
+    raise NotImplementedError('subclasses must override it')
 
 
-  def similarity(self, sentence1, sentence2):
-    """Bad examples for the word2vec model. Fixed by removing stop words.
-       # should be 'hello'
-      print(model.similarity('hi there', 'where to so see holidays'))
-      # should be 'become mentee'
-      print(model.similarity('how to become mentee', 'become mentee'))
-    """
-    s1_v = self.avg_vector(sentence1)
-    s2_v = self.avg_vector(sentence2)
-    return 1 - spatial.distance.cosine(s1_v, s2_v)
+  def predict_questions(self, questions_data):
+    raise NotImplementedError('subclasses must override it')
 
 
-  def avg_vector(self, sentence):
-    '''Returns average vector for sentence'''
-    words = sentence.split()
-    feature_vec = np.zeros((self.num_features, ), dtype='float32')
-    n_words = 0
-    for word in words:
-      if word in self.index2word_set:
-        n_words += 1
-        feature_vec = np.add(feature_vec, self.word_vectors[word])
-    if (n_words > 0):
-      feature_vec = np.divide(feature_vec, n_words)
-    return feature_vec
-
-
-class ChatModel(Word2VecModel):
+class PredictQuestionModel(AbstractModel):
   """Predicts user question by user input.
     Stores predefined list of questions during calling fit().
   """
 
-  def __init__(self, logging, word2vec_file):
-    Word2VecModel.__init__(self, logging, word2vec_file)
+  def __init__(self, metric, logging):
+    self.logging = logging
+    self.metric = metric
     # Similarity threshold used to detect if similar sentence found
     self.similarity = 0
     # Set of questions.
@@ -113,7 +32,7 @@ class ChatModel(Word2VecModel):
 
 
   def reset(self):
-    Word2VecModel.reset(self)
+    self.metric.reset(self)
     self.similarity = 0
     self.questions = {}
 
@@ -158,7 +77,7 @@ class ChatModel(Word2VecModel):
       parsed_query = row['parsed_query']
       if parsed_query not in parsed_query_to_similarity_map:
         similar_question, similarity = \
-          self.most_similar(parsed_query, self.questions)
+          self.metric.most_similar(parsed_query, self.questions)
         parsed_query_to_similarity_map[parsed_query] = \
           (similar_question, similarity)
       else:
@@ -258,7 +177,7 @@ class ChatModel(Word2VecModel):
     return predicted_questions
 
   def predict(self, sentence):
-    similar_question, similarity = self.most_similar(sentence, self.questions)
+    similar_question, similarity = self.metric.most_similar(sentence, self.questions)
     if similarity < self.similarity:
       return '', similarity # Not found.
     return similar_question, similarity

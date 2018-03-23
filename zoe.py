@@ -4,8 +4,9 @@ import logging
 import time
 import argparse
 
-from word2vec_model import ChatModel
 from nl_processor import NLProcessor
+from predict_question_model import AbstractModel, PredictQuestionModel
+from sentences_similarity_metric import AbstractMetric, Word2VecSimilarityMetric
 
 OUTPUT_FILE = "data/output.txt"
 # HISTORY_FILE = 'data/history.csv'
@@ -94,7 +95,8 @@ def main():
 
   # Build model
   logging.info("Creating model")
-  model = ChatModel(logger, GLOVE_INPUT_FILE)
+  metric = Word2VecSimilarityMetric(logger, GLOVE_INPUT_FILE)
+  model = PredictQuestionModel(metric, logger)
   logging.debug("Loading KB questions")
   questions = load_questions_from_file(QUESTIONS_KB)
   model.load_questions(questions)
