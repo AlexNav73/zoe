@@ -8,7 +8,9 @@ from word2vec_model import ChatModel
 from nl_processor import NLProcessor
 
 OUTPUT_FILE = "data/output.txt"
-HISTORY_FILE = 'data/history.csv'
+# HISTORY_FILE = 'data/history.csv'
+HISTORY_FILE = 'data/321.csv'
+QUESTIONS_KB = 'data/questions.txt'
 CLEANED_DATA_FILE = 'data/cleaned_history.csv'
 GLOVE_INPUT_FILE = 'data/glove/glove.6B.50d.txt'
 
@@ -40,7 +42,7 @@ def load_cleaned_data(path, delimiter='\t'):
   """Expected csv format:
     query,parsed_query,question,accuracy,date,answer,correct
     where `correct`=1|0 - label that means that `parsed_query` is a correct question
-    `accuracy` - oscova chatbot accuracy (from another model)
+    `accuracy` - Oscova chatbot accuracy (from another model)
   :return: list of dictionaries
   """
   with open(path, 'r') as csvfile:
@@ -49,6 +51,10 @@ def load_cleaned_data(path, delimiter='\t'):
     for row in reader:
       cleaned_data.append(row)
   return cleaned_data
+
+
+def load_questions_from_file(path):
+  return { q.strip() for q in open(path, 'r') }
 
 
 def write_results_to_file(results, path):
@@ -89,13 +95,15 @@ def main():
   # Build model
   logging.info("Creating model")
   model = ChatModel(logger, GLOVE_INPUT_FILE)
+  logging.debug("Loading KB questions")
+  questions = load_questions_from_file(QUESTIONS_KB)
+  model.load_questions(questions)
   logging.debug("Training model")
-  accuracy, similarity = model.fit(cleaned_data, [.96, .97, .98])
+  accuracy, similarity = model.fit(cleaned_data, [.95, .96, .97, .98])
 
-  logging.info(
-    "Model has been trained successfully. Accuracy: %d Similarity: %d",
-    accuracy,
-    similarity)
+  logging.info("Model has been trained successfully. accuracy: %d similarity: %d",
+      accuracy,
+      similarity)
   logging.debug(">> time spent: %ds\n", time.clock() - start)
 
   # Load raw data

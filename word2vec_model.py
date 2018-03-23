@@ -118,6 +118,10 @@ class ChatModel(Word2VecModel):
     self.questions = {}
 
 
+  def load_questions(self, questions):
+    self.questions = set(questions)
+
+
   def fit(self, data, similarity_thresholds=[0.9]):
     """Trains using the given data trying to choose best similarity threshold.
     :param data: list of dictionaries in the form:
@@ -127,8 +131,6 @@ class ChatModel(Word2VecModel):
     """
 
     rows_number = len(data)
-    self.questions = { v['question'] for v in data }
-
     # A query can have several correct questions. Cache it in the map.
     query_to_correct_questions_map = {}
     for row in data:
