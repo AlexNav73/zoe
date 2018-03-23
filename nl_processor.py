@@ -10,6 +10,8 @@ from nltk.corpus import stopwords
 from nltk.tree import Tree
 
 NLTK_DATA_DIR = "data/nltk"
+NAMES_CORPUS = 'data/census.gov.names.txt'
+ACRONYMS = 'data/acronyms.txt'
 
 class NLProcessor:
 
@@ -18,21 +20,20 @@ class NLProcessor:
     self.stop_words = stopwords.words('english')
     self.stop_words_ru = stopwords.words('russian')
     # TODO: add other languages
-    self.persons_names = self.load_persons_names()
-    self.acronyms = self.load_acronyms()
+    self.persons_names = self.load_persons_names(NAMES_CORPUS)
+    self.acronyms = self.load_acronyms(ACRONYMS)
+    self.ensure_nltk_data_download(NLTK_DATA_DIR)
 
-    self.ensure_nltk_data_download()
 
-
-  def ensure_nltk_data_download(self):
-    if not os.path.exists(NLTK_DATA_DIR):
+  def ensure_nltk_data_download(self, path):
+    if not os.path.exists(path):
       self.logging.info("nltk data not exists. Start downloading ...")
 
-      nltk.download('punkt', download_dir=NLTK_DATA_DIR)
-      nltk.download('stopwords', download_dir=NLTK_DATA_DIR)
-      nltk.download('averaged_perceptron_tagger', download_dir=NLTK_DATA_DIR)
-      nltk.download('maxent_ne_chunker', download_dir=NLTK_DATA_DIR)
-      nltk.download('words', download_dir=NLTK_DATA_DIR)
+      nltk.download('punkt', download_dir=path)
+      nltk.download('stopwords', download_dir=path)
+      nltk.download('averaged_perceptron_tagger', download_dir=path)
+      nltk.download('maxent_ne_chunker', download_dir=path)
+      nltk.download('words', download_dir=path)
 
       self.logging.info("nltk data has been successfully downloaded")
 
@@ -84,7 +85,12 @@ class NLProcessor:
         #is_etalon = row['Etalon']
         accuracy = row['Accuracy']
         created = row['Created']
-        created_date = datetime.strptime(created, '%Y-%m-%d %H:%M:%S.%f')
+
+        try:
+          created_date = datetime.strptime(created, '%Y-%m-%d %H:%M:%S.%f')
+        except:
+          print(row['\ufeffId'])
+          continue
 
         # filters non-ascii symbols
         if not self.is_ascii(query):
@@ -219,23 +225,22 @@ class NLProcessor:
     return corrected_spelling
 
 
-  def load_persons_names(self):
+  def load_persons_names(self, path):
     # downloaded from http://www.outpost9.com/files/WordLists.html
     # crl-names - filters names like How, Holiday:(
     # Given-Names - filters names like Meeting, Car:(
 
     # Downloaded form https://goo.gl/EwBq8s
     # TODO: find better dataset.
-    names_corpus = 'data/census.gov.names.txt'
     persons_names = [
-      line.rstrip('\n').lower() for line in open(names_corpus)
+      line.rstrip('\n').lower() for line in open(path)
       if not line.startswith('#')
     ]
     return [word.split()[2] for word in persons_names]
 
 
-  def load_acronyms(self):
-    return [line.rstrip('\n').lower() for line in open('data/acronyms.txt')]
+  def load_acronyms(self, path):
+    return [line.rstrip('\n').lower() for line in open(path)]
 
 
   def remove_stop_words(self, phrase):
@@ -292,7 +297,7 @@ class NLProcessor:
 
     # removes rows containing only one word
     token_words = parsed_phrase.split()
-    if len(token_words) <= 1:
+    if len(token_words) < 1: # TODO(alex): Maybe use <= 1
       self.ignored_words_number += 1
       return ''
 
@@ -306,4 +311,3 @@ class NLProcessor:
       return ''
 
     return parsed_phrase
-

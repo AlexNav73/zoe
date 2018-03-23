@@ -3,16 +3,21 @@ from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
 from scipy import spatial
 
-class AbstractModel:
+from abc import ABC, abstractmethod
 
+class AbstractModel(ABC):
+
+  @abstractmethod
   def reset(self):
     raise NotImplementedError('subclasses must override it')
 
 
+  @abstractmethod
   def fit(self, data, similarity_thresholds):
     raise NotImplementedError('subclasses must override it')
 
 
+  @abstractmethod
   def predict_questions(self, questions_data):
     raise NotImplementedError('subclasses must override it')
 

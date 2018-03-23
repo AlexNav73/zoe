@@ -3,14 +3,18 @@ from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
 from scipy import spatial
 
+from abc import ABC, abstractmethod
+
 import numpy as np
 import os.path
 
-class AbstractMetric:
+class AbstractMetric(ABC):
 
+  @abstractmethod
   def reset(self):
     raise NotImplementedError('subclasses must override it')
 
+  @abstractmethod
   def most_similar(self, sentence, sentences):
     raise NotImplementedError('subclasses must override it')
 
@@ -105,5 +109,3 @@ class Word2VecSimilarityMetric(AbstractMetric):
     if (n_words > 0):
       feature_vec = np.divide(feature_vec, n_words)
     return feature_vec
-
-

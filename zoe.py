@@ -8,6 +8,8 @@ from nl_processor import NLProcessor
 from predict_question_model import AbstractModel, PredictQuestionModel
 from sentences_similarity_metric import AbstractMetric, Word2VecSimilarityMetric
 
+from service import Service, StdioChannel
+
 OUTPUT_FILE = "data/output.txt"
 # HISTORY_FILE = 'data/history.csv'
 HISTORY_FILE = 'data/321.csv'
@@ -47,11 +49,7 @@ def load_cleaned_data(path, delimiter='\t'):
   :return: list of dictionaries
   """
   with open(path, 'r') as csvfile:
-    reader = csv.DictReader(csvfile, delimiter=delimiter)
-    cleaned_data = []
-    for row in reader:
-      cleaned_data.append(row)
-  return cleaned_data
+    return [row for row in csv.DictReader(csvfile, delimiter=delimiter)]
 
 
 def load_questions_from_file(path):
@@ -75,7 +73,7 @@ def write_results_to_file(results, path):
           row['predicted_question'],
           row['question']))
 
-def main():
+def main(args):
   start = time.clock()
 
   # Load data to train model
@@ -115,19 +113,24 @@ def main():
   logging.debug(">> time spent: %ds\n", time.clock() - start)
 
   # Predict
-  logging.info("Predicting questions")
-  predicted_questions = model.predict_questions(questions_data)
+  if not args.embed:
+    logging.info("Predicting questions")
+    predicted_questions = model.predict_questions(questions_data)
 
-  logging.info("Dump output to %s file", OUTPUT_FILE)
-  write_results_to_file(predicted_questions, OUTPUT_FILE)
+    logging.info("Dump output to %s file", OUTPUT_FILE)
+    write_results_to_file(predicted_questions, OUTPUT_FILE)
 
-  logging.debug(">> time spent: %ds\n", time.clock() - start)
-  logging.info('done')
+    logging.debug(">> time spent: %ds\n", time.clock() - start)
+    logging.info('done')
+  elif args.stdout:
+    service = Service(StdioChannel(), nl_processor, model)
+    service.start()
 
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('--embed', action="store_true", help="Use script as embedded process. All logging will be skipped")
+  parser.add_argument('--stdout', action="store_true", help="Talk with script using basic stdin/stdout")
 
   args = parser.parse_args()
 
@@ -137,4 +140,5 @@ if __name__ == '__main__':
 
   logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=level)
   logger = logging.getLogger(__name__)
-  main()
+
+  main(args)
